@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>demo</title>
+  <script src="./tf.min.js"></script>
+  <script src="./tfjs-vis.umd.min.js"></script>
+</head>
+<body>
+  <h1>线性回归归一化预测</h1>
+  <h2>身高体重归一化预测</h2>
+  <script>
+    window.onload = async function () {
+      // 身高体重数据
+      const heights = [150, 160, 170];
+      const weights = [40, 50, 60];
+
+      // 使用 tfjs-vis 的 render.scatterplot 方法绘制散点图
+      tfvis.render.scatterplot(
+        { name: '身高体重归一化训练集' },
+        { values: heights.map((x, i) => ({x, y: weights[i]})) },
+        { xAxisDomain: [140, 180], yAxisDomain: [30, 70] }
+      );
+
+      // 将训练数据转换为Tensor并且归一化处理
+      // 将[150, 160, 170]减去最小值的150,再除以最大值与最小值的距离170-150，得到[0, 0.5, 1]
+      const inputs = tf.tensor(heights).sub(150).div(20);
+      const labels = tf.tensor(weights).sub(40).div(20);
+
+      // 创建一个顺序模型（Sequential Model）
+      const model = tf.sequential();
+      // 添加一个全连接层（Dense Layer）
+      model.add(tf.layers.dense({
+        units: 1, // 输出维度为 1
+        inputShape: [1] // 输入形状为 [1]
+      }));
+
+      model.compile({
+        loss: tf.losses.meanSquaredError, // 'meanSquaredError' 损失函数：均方误差（Mean Squared Error）
+        optimizer: tf.train.sgd(0.1) // 'sgd' 优化器：随机梯度下降（SGD），学习率为 0.1
+      });
+
+      await model.fit(inputs, labels, {
+        batchSize: 3, // 一次处理全部数据（因为只有 4 个样本）
+        epochs: 100, // 训练 100 个周期
+        // tfvis.show.fitCallbacks 来实时显示训练过程（损失值）
+        callbacks: tfvis.show.fitCallbacks(
+          { name: '训练过程' },
+          ['loss']
+        )
+      });
+
+      // 预测身高180的体重
+      const output = model.predict(tf.tensor([180]).sub(150).div(20));
+      alert(`身高180的体重为${output.mul(20).add(40).dataSync()[0]}`);
+    }
+  </script>
+</body>
+</html>

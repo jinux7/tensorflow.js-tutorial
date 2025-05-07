@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>demo</title>
+  <script src="./tf.min.js" module></script>
+  <script src="./tfjs-vis.umd.min.js"></script>
+  <script src="./data.js"></script>
+</head>
+<body>
+  <h1>多分类</h1>
+  <script>
+    window.onload = async function () {
+      // [训练集特征， 训练集标签, 验证集特征, 验证集标签]
+      const [xTrain, yTrain, xTest, yTest] = getIrisData(0.15);
+      // 创建一个顺序模型（Sequential Model）
+      const model = tf.sequential();
+      // 添加一个隐藏层
+      model.add(tf.layers.dense({
+        units: 10, // 神经元个数10
+        // inputShape: [xTrain.shape[1]], // xTrain.shape是[126, 4]
+        inputShape: [4], // 输入形状为 [x,x,x,x]
+        activation: 'sigmoid', // 激活函数：sigmoid,输出值是在0~1之间
+      }));
+      model.add(tf.layers.dense({
+        units: 3, // 输出维度3
+        activation: 'softmax', // 激活函数：softmax
+      }));
+
+      model.compile({
+        loss: 'categoricalCrossentropy', // 交叉熵损失函数
+        optimizer: tf.train.adam(0.1), // adam 是一种自适应学习率的方法
+        metrics: ['accuracy'] // 度量，准确度
+      });
+      // 训练模型
+      await model.fit(xTrain, yTrain, {
+        batchSize: 32, // 一次处理32数据
+        epochs: 100, // 训练 100 个周期
+        validationData: [xTest, yTest],
+        // tfvis.show.fitCallbacks 来实时显示训练过程（损失值）
+        callbacks: tfvis.show.fitCallbacks(
+          { name: '训练过程' },
+          ['loss', 'val_loss', 'acc', 'val_acc'], // 损失度和准确度
+          { callbacks: ['onEpochEnd']}
+        )
+      });
+
+      // 预测
+      const inputData = [4.8, 3.0, 1.5, 0.3]; 
+      // 将输入数组转换为 Tensor，形状为 [1, 4]
+      const inputTensor = tf.tensor2d([inputData], [1, 4]);
+      // 进行预测
+      const prediction = model.predict(inputTensor);
+      prediction.print();
+      // 获取预测类别索引
+      // tf.argMax(prediction, 1): tf.argMax 函数用于返回指定轴（axis）上最大值的索引。参数 1 指定了沿着第二个维度（即每个预测向量内部）找到最大值的索引。换句话说，如果你的预测输出是 [[0.1, 0.7, 0.2]]，那么 tf.argMax(prediction, 1) 将返回 ``，因为第二个元素（索引从0开始计数）的概率最大。
+      const predictedIndex = tf.argMax(prediction, 1).dataSync()[0];
+      alert(`预测结果：${IRIS_CLASSES[predictedIndex]}`);
+    }
+  </script>
+</body>
+</html>
