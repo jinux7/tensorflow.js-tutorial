@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>demo</title>
+  <script src="./tf.min.js"></script>
+  <script src="./tfjs-vis.umd.min.js"></script>
+</head>
+<body>
+  <h1>手写数字识别</h1>
+  <input type="text" id="input" placeholder="请输入一个数字">
+  <button onclick="onPredict()">预测</button>
+  <script>
+    let onPredict; // 预测按钮点击事件回调函数
+    window.onload = async function () {
+      onPredict = ()=> {
+        const val = +document.getElementById('input').value;
+        if(val&&typeof val==='number') {
+          const output = model.predict(tf.tensor([val]));
+          output.print();
+          alert(output.dataSync()[0])
+        }
+      }
+      // 训练数据集 这个数据是 y = 2x -1函数的线性回归
+      const xs = [1,2,3,4];
+      const ys = [1,3,5,7];
+
+      // 使用 tfjs-vis 的 render.scatterplot 方法绘制散点图
+      tfvis.render.scatterplot(
+        { name: '线性回归训练集' },
+        { values: xs.map((x, i) => ({x, y: ys[i]})) },
+        { xAxisDomain: [0, 5], yAxisDomain: [0, 10] }
+      );
+
+      // 创建一个顺序模型（Sequential Model）
+      const model = tf.sequential();
+      // 添加一个全连接层（Dense Layer）
+      model.add(tf.layers.dense({
+        units: 1, // 输出维度为 1
+        inputShape: [1] // 输入形状为 [1]
+      }));
+
+      model.compile({
+        loss: tf.losses.meanSquaredError, // 'meanSquaredError' 损失函数：均方误差（Mean Squared Error）
+        optimizer: tf.train.sgd(0.1) // 'sgd' 优化器：随机梯度下降（SGD），学习率为 0.1
+      });
+
+      // 将训练数据转换为 TensorFlow.js 的张量（Tensor）
+      const inputs = tf.tensor(xs);
+      const labels = tf.tensor(ys);
+
+      await model.fit(inputs, labels, {
+        batchSize: 4, // 一次处理全部数据（因为只有 4 个样本）
+        epochs: 100, // 训练 100 个周期
+        // tfvis.show.fitCallbacks 来实时显示训练过程（损失值）
+        callbacks: tfvis.show.fitCallbacks(
+          { name: '训练过程' },
+          ['loss']
+        )
+      });
+
+      // const output = model.predict(tf.tensor([5]));
+      // output.print();
+    }
+  </script>
+</body>
+</html>
