@@ -403,3 +403,4 @@ Predict阶段是使用神经网络模型进行预测的阶段，这也是前端�
 [TensorFlow.js中文官网](https://tensorflow.google.cn/js?hl=zh-cn)
 [w3cschool](https://www.w3cschool.cn/tensorflowjs/)
 [TensorFlow.js模型下载](https://www.kaggle.com/models)
+[训练数据集](https://modelscope.cn/datasets)
