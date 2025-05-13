@@ -43,16 +43,50 @@
       const testData = data.getTestData();
 
       const model = tf.sequential();
-      model.add(tf.layers.flatten({inputShape: [IMAGE_H, IMAGE_W, 1]}));
-      model.add(tf.layers.dense({units: 42, activation: 'relu'}));
-      model.add(tf.layers.dense({units: 10, activation: 'softmax'}));
-      
+
+      // 方法一
+      // model.add(tf.layers.flatten({inputShape: [IMAGE_H, IMAGE_W, 1]}));
+      // model.add(tf.layers.dense({units: 42, activation: 'relu'}));
+      // model.add(tf.layers.dense({units: 10, activation: 'softmax'}));
+
+      // 方法二
+      model.add(tf.layers.conv2d({
+        inputShape: [IMAGE_H, IMAGE_W, 1],
+        kernelSize: 5,
+        filters: 8,
+        strides: 1,
+        activation: 'relu',
+        kernelInitializer: 'varianceScaling'
+      }));
+      model.add(tf.layers.maxPool2d({
+        poolSize: 2, 
+        strides: 2
+      }));
+      model.add(tf.layers.conv2d({
+        kernelSize: 5,
+        filters: 16,
+        strides: 1,
+        activation: 'relu',
+        kernelInitializer: 'varianceScaling'
+      }));
+      model.add(tf.layers.maxPool2d({
+        poolSize: 2, 
+        strides: 2
+      }));
+      model.add(tf.layers.flatten());
+      model.add(tf.layers.dense({
+        units: 10, 
+        activation: 'softmax',
+        kernelInitializer: 'varianceScaling'
+      }));
+
       model.compile({
         optimizer: 'rmsprop',
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
       });
       
+      // 训练数据
       await model.fit(trainData.xs, trainData.labels, {
         batchSize: 320,
         validationSplit: 0.15,
