@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script> -->
+    <script src="./tf.min.js"></script>
+    <style>
+      img {
+        width: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>语音识别</h1>
+    <script src="./speech-commands.js"></script>
+    <script type="module">
+      const MODEL_PATH = 'http://localhost:8888/%E6%A8%A1%E5%9E%8B%E6%A1%88%E4%BE%8B/%E8%AF%AD%E9%9F%B3%E8%AF%86%E5%88%AB/source/models';
+      window.onload = async function () {
+        const recognizer = speechCommands.create(
+          'BROWSER_FFT', 
+          null, 
+          MODEL_PATH + '/model.json',
+          MODEL_PATH + '/metadata.json'
+        );
+
+        await recognizer.ensureModelLoaded();
+        const labels = recognizer.wordLabels();
+        // console.log(labels);
+        recognizer.listen(result => {
+          const { scores } = result;
+          const maxValue = Math.max(...scores);
+          const index = scores.indexOf(maxValue);
+          console.log(labels[index]);
+        }, {
+          overlapFactor: 0.3,
+          probabilityThreshold: 0.9,
+        }
+        )
+      }
+    </script>
+  </body>
+</html>
