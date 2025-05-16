@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script> -->
     <script src="./tf.min.js"></script>
     <style>
       img {
@@ -10,10 +9,16 @@
     </style>
   </head>
   <body>
-    <h1>语音识别</h1>
+    <h1>迁移学习-语音识别-轮播图</h1>
+    <div>
+      <button onclick="collect(this)">上一张</button>
+      <button onclick="collect(this)">下一张</button>
+      <button onclick="collect(this)">背景噪音</button>
+    </div>
     <script src="./speech-commands.js"></script>
     <script type="module">
       const MODEL_PATH = 'http://localhost:8888/%E6%A8%A1%E5%9E%8B%E6%A1%88%E4%BE%8B/%E8%AF%AD%E9%9F%B3%E8%AF%86%E5%88%AB/source/models';
+      let transferRecognizer;
       window.onload = async function () {
         const recognizer = speechCommands.create(
           'BROWSER_FFT', 
@@ -23,18 +28,17 @@
         );
 
         await recognizer.ensureModelLoaded();
-        const labels = recognizer.wordLabels();
-        // console.log(labels);
-        recognizer.listen(result => {
-          const { scores } = result;
-          const maxValue = Math.max(...scores);
-          const index = scores.indexOf(maxValue);
-          console.log(labels[index]);
-        }, {
-          overlapFactor: 0.3,
-          probabilityThreshold: 0.9,
-        }
-        )
+        // 创建迁移学习器
+        transferRecognizer = recognizer.createTransfer('轮播图');
+      }
+      window.collect = async (btn)=> {
+        btn.disabled = true;
+        const label = btn.innerText;
+        await transferRecognizer.collectExample(
+          label==='背景噪音'?'_background_noise_':label
+        );
+        btn.disabled = false;
+        console.log(transferRecognizer.countExamples());
       }
     </script>
   </body>
