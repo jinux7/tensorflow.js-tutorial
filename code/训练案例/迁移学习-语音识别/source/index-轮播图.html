@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="./tf.min.js"></script>
+    <script src="./tfjs-vis.umd.min.js"></script>
+    <style>
+      .slider {
+        overflow: hidden;
+        width: 600px;
+        margin: 20px 100px;
+      }
+      .slider > div {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        transition: all 1s;
+      }
+      .slider img {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>迁移学习-语音识别-轮播图</h1>
+    <h2>加载采集好的训练数据</h2>
+    <div style="margin-top: 20px;">
+      监听开关：<input type="checkbox" onchange="toggle(this.checked)"></input>
+    </div>
+    <div class="slider">
+      <div>
+        <img src="./images/1.jpg" alt="">
+        <img src="./images/2.jpg" alt="">
+        <img src="./images/3.jpg" alt="">
+        <img src="./images/4.jpg" alt="">
+        <img src="./images/5.jpg" alt="">
+        <img src="./images/6.jpg" alt="">
+      </div>
+    </div>
+    <script src="./speech-commands.js"></script>
+    <script type="module">
+      const BASE = 'http://localhost:8888/%E8%AE%AD%E7%BB%83%E6%A1%88%E4%BE%8B/%E8%BF%81%E7%A7%BB%E5%AD%A6%E4%B9%A0-%E8%AF%AD%E9%9F%B3%E8%AF%86%E5%88%AB/source';
+      const MODEL_PATH = BASE + '/models';
+      const DATA_PATH = BASE + '/data/';
+      let transferRecognizer;
+      window.onload = async function () {
+        const recognizer = speechCommands.create(
+          'BROWSER_FFT', 
+          null, 
+          MODEL_PATH + '/model.json',
+          MODEL_PATH + '/metadata.json'
+        );
+
+        await recognizer.ensureModelLoaded();
+        // 创建迁移学习器
+        transferRecognizer = recognizer.createTransfer('轮播图');
+        // 加载数据
+        const res = await fetch(DATA_PATH + '/data.bin');
+        const arrayBuffer = await res.arrayBuffer();
+        transferRecognizer.loadExamples(arrayBuffer); // 加载训练数据
+        console.log(transferRecognizer.countExamples());
+        // 训练
+        await transferRecognizer.train({
+          epochs: 30,
+          callback: tfvis.show.fitCallbacks(
+            { name: '训练效果' }, 
+            ['loss', 'acc'], 
+            { callbacks: ['onEpochEnd'] }
+          )
+        });
+      }
+      // 监听开关
+      window.toggle = async (checked)=> {
+        if (checked) {
+          await transferRecognizer.listen(result=> {
+            const { scores } = result;
+            const labels = transferRecognizer.wordLabels();
+            const index = scores.indexOf(Math.max(...scores));
+            console.log(labels[index]);
+            window.play(labels[index]);
+          }, {
+            overlapFactor: 0,
+            probabilityThreshold: 0.75,
+          });
+        } else {
+          await transferRecognizer.stopListening();
+        }
+      }
+      let curIndex = 0;
+      // 轮播播放
+      window.play = label=> {
+        const div = document.querySelector('.slider>div');
+        if(label === '上一张') {
+          if(curIndex === 0) return ;
+          curIndex--;
+        }else {
+          if(curIndex === (document.querySelectorAll('.slider img').length-1)) return ;
+          curIndex++;
+        }
+        div.style.transform = `translateX(-${curIndex*100}%)`;
+      }
+    </script>
+  </body>
+</html>

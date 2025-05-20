@@ -11,10 +11,12 @@
   </head>
   <body>
     <h1>迁移学习-语音识别-轮播图</h1>
+    <h2>可以采集语音数据并且保存，训练数据，监听语音。</h2>
     <div>
       <button onclick="collect(this)">上一张</button>
       <button onclick="collect(this)">下一张</button>
       <button onclick="collect(this)">背景噪音</button>
+      <button onclick="save()">保存训练数据</button>
     </div>
     <div style="margin-top: 20px;">
       <button onclick="train()">训练</button>
@@ -73,6 +75,16 @@
         } else {
           await transferRecognizer.stopListening();
         }
+      }
+      // 保存训练数据
+      window.save = async ()=> {
+        const arrayBuffer = transferRecognizer.serializeExamples();
+        console.log(arrayBuffer);
+        const blob = new Blob([arrayBuffer]);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'data.bin';
+        link.click();
       }
     </script>
   </body>
