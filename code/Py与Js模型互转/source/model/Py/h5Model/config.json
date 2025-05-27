@@ -1,0 +1,169 @@
+{
+    "module": "keras_hub.src.models.mobilenet.mobilenet_backbone",
+    "class_name": "MobileNetBackbone",
+    "config": {
+        "name": "mobile_net_backbone",
+        "trainable": true,
+        "stackwise_expansion": [
+            [
+                72,
+                88
+            ],
+            [
+                96,
+                240,
+                240
+            ],
+            [
+                120,
+                144
+            ],
+            [
+                288,
+                576,
+                576
+            ]
+        ],
+        "stackwise_num_blocks": [
+            2,
+            3,
+            2,
+            3
+        ],
+        "stackwise_num_filters": [
+            [
+                24,
+                24
+            ],
+            [
+                40,
+                40,
+                40
+            ],
+            [
+                48,
+                48
+            ],
+            [
+                96,
+                96,
+                96
+            ]
+        ],
+        "stackwise_kernel_size": [
+            [
+                3,
+                3
+            ],
+            [
+                5,
+                5,
+                5
+            ],
+            [
+                5,
+                5
+            ],
+            [
+                5,
+                5,
+                5
+            ]
+        ],
+        "stackwise_num_strides": [
+            [
+                2,
+                1
+            ],
+            [
+                2,
+                1,
+                1
+            ],
+            [
+                1,
+                1
+            ],
+            [
+                2,
+                1,
+                1
+            ]
+        ],
+        "stackwise_se_ratio": [
+            [
+                null,
+                null
+            ],
+            [
+                0.25,
+                0.25,
+                0.25
+            ],
+            [
+                0.25,
+                0.25
+            ],
+            [
+                0.25,
+                0.25,
+                0.25
+            ]
+        ],
+        "stackwise_activation": [
+            [
+                "relu",
+                "relu"
+            ],
+            [
+                "hard_swish",
+                "hard_swish",
+                "hard_swish"
+            ],
+            [
+                "hard_swish",
+                "hard_swish"
+            ],
+            [
+                "hard_swish",
+                "hard_swish",
+                "hard_swish"
+            ]
+        ],
+        "stackwise_padding": [
+            [
+                1,
+                1
+            ],
+            [
+                2,
+                2,
+                2
+            ],
+            [
+                2,
+                2
+            ],
+            [
+                2,
+                2,
+                2
+            ]
+        ],
+        "image_shape": [
+            null,
+            null,
+            3
+        ],
+        "input_num_filters": 16,
+        "output_num_filters": 1024,
+        "depthwise_filters": 16,
+        "depthwise_stride": 2,
+        "depthwise_residual": false,
+        "last_layer_filter": 576,
+        "squeeze_and_excite": 0.5,
+        "input_activation": "hard_swish",
+        "output_activation": "hard_swish"
+    },
+    "registered_name": "keras_hub>MobileNetBackbone"
+}

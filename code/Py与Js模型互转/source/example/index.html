@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="./tf.min.js"></script>
+    <style>
+      img {
+        width: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>图像分类，可识别超过1000种不同的物体类别</h1>
+    <!-- <img id="mystery" src="./images/1.png" width="100%" /> -->
+    <img id="mystery" src="./images/2.jpg" width="100%" />
+    <!-- <img id="mystery" src="./images/3.jpg" width="100%" /> -->
+    <!-- <img id="mystery" src="./images/4.jpg" width="100%" /> -->
+    <!-- <img id="mystery" src="./images/5.png" width="100%" /> -->
+    <!-- <img id="mystery" src="./images/6.jpg" width="100%" /> -->
+    <script type="module">
+      import { INCEPTION_CLASSES } from './labels.js'
+
+      tf.ready().then(() => {
+        const modelPath = '../model/Js/graphModel/model.json'
+        tf.tidy(() => {
+          tf.loadGraphModel(modelPath, { fromTFHub: false }).then((model) => {
+            const mysteryImage = document.getElementById('mystery')
+            const myTensor = tf.browser.fromPixels(mysteryImage)
+
+            const readyfied = tf.image
+              .resizeBilinear(myTensor, [128, 128], true)
+              .div(255)
+              .reshape([1, 128, 128, 3])
+
+            const result = model.predict(readyfied)
+            const { values, indices } = tf.topk(result, 3)
+            const winners = indices.dataSync()
+            console.log(`
+              🥇 ${INCEPTION_CLASSES[winners[0]]},
+              🥈 ${INCEPTION_CLASSES[winners[1]]},
+              🥉 ${INCEPTION_CLASSES[winners[2]]}
+            `)
+          })
+        })
+      })
+    </script>
+  </body>
+</html>
