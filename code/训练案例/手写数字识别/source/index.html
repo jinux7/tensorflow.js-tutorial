@@ -9,18 +9,22 @@
 
 <body>
   <h1>手写数字识别</h1>
+  <!-- 提供一个画布让用户绘制数字 -->
   <canvas width="300" height="300" style="border: 1px solid #666666;"></canvas>
+  <!-- 控制按钮：清除和预测 -->
   <div style="margin-top: 10px;">
     <button onclick="window.clear()">清除</button>
     <button onclick="window.predict()">预测</button>
   </div>
+  <!-- 显示训练进度信息 -->
   <div id="progress" style="position: fixed;top: 20%;right: 30%;font-size: 42px;">训练准备中</div>
   <script type="module">
-    import { MnistData, IMAGE_H, IMAGE_W } from './data.js';
+    import { MnistData, IMAGE_H, IMAGE_W } from './data.js'; // 导入 MNIST 数据集模块以及图像尺寸常量
     window.onload = async () => {
-      const epochs = 3;
-      const canvas = document.querySelector('canvas');
-      const progress = document.getElementById('progress');
+      const epochs = 3; // 设置训练轮数
+      const canvas = document.querySelector('canvas'); // 获取画布元素
+      const progress = document.getElementById('progress'); // 获取进度显示区域
+      // 监听鼠标移动事件，当鼠标按下时在画布上绘制白色方块模拟笔迹
       canvas.addEventListener('mousemove', ev=> {
         if(ev.buttons === 1) {
           const ctx = canvas.getContext('2d');
@@ -28,6 +32,7 @@
           ctx.fillRect(ev.offsetX, ev.offsetY, 20, 20);
         }
       }, false);
+      // 定义清除画布函数
       window.clear = ()=> {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#000000';
@@ -38,10 +43,10 @@
       // 训练数据
       const data = new MnistData();
       await data.load();
-
+      // 获取训练数据和测试数据
       const trainData = data.getTrainData();
       const testData = data.getTestData();
-
+      // 创建模型：使用 Sequential API 构建神经网络
       const model = tf.sequential();
 
       // 方法一
@@ -50,18 +55,20 @@
       // model.add(tf.layers.dense({units: 10, activation: 'softmax'}));
 
       // 方法二
+      // 使用卷积神经网络进行分类
       model.add(tf.layers.conv2d({
-        inputShape: [IMAGE_H, IMAGE_W, 1],
-        kernelSize: 5,
-        filters: 8,
-        strides: 1,
-        activation: 'relu',
-        kernelInitializer: 'varianceScaling'
+        inputShape: [IMAGE_H, IMAGE_W, 1], // 输入形状为 28x28 灰度图
+        kernelSize: 5, // 卷积核大小 5x5
+        filters: 8, // 使用 8 个滤波器
+        strides: 1, // 步长为 1
+        activation: 'relu', // 激活函数为 relu
+        kernelInitializer: 'varianceScaling' // 初始化方式
       }));
-      model.add(tf.layers.maxPool2d({
-        poolSize: 2, 
-        strides: 2
+      model.add(tf.layers.maxPool2d({ // 最大池化层
+        poolSize: 2, // 池化窗口大小 2x2
+        strides: 2 // 步长为 2
       }));
+      // 第二个卷积层 + 池化层
       model.add(tf.layers.conv2d({
         kernelSize: 5,
         filters: 16,
@@ -73,61 +80,63 @@
         poolSize: 2, 
         strides: 2
       }));
+      // 将多维输出展平为一维向量
       model.add(tf.layers.flatten());
+      // 全连接输出层，输出为 10 个类别的概率分布（对应数字 0~9）
       model.add(tf.layers.dense({
         units: 10, 
         activation: 'softmax',
         kernelInitializer: 'varianceScaling'
       }));
-
+      // 编译模型，设置优化器、损失函数和评估指标
       model.compile({
         optimizer: 'rmsprop',
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
       });
       
-      // 训练数据
+      // 训练模型
       await model.fit(trainData.xs, trainData.labels, {
-        batchSize: 320,
-        validationSplit: 0.15,
-        epochs,
-        callbacks: {
+        batchSize: 320, // 批次大小
+        validationSplit: 0.15, // 验证集比例
+        epochs, // 总共训练多少轮
+        callbacks: { // 回调函数
           onBatchEnd: async (batch, logs) => {
-            console.log('LOSS: ' + logs.loss);
-            await tf.nextFrame();
+            console.log('LOSS: ' + logs.loss); // 每个批次结束后打印损失值
+            await tf.nextFrame(); // 浏览器友好控制
           },
           onEpochEnd: async (epoch, logs) => {
-            console.log('EPOCH: ' + logs.loss);
-            progress.innerHTML = `训练进度: ${epoch + 1}/${epochs}`;
+            console.log('EPOCH: ' + logs.loss); // 每个 epoch 结束后打印损失值
+            progress.innerHTML = `训练进度: ${epoch + 1}/${epochs}`; // 更新进度
             if(epoch === epochs - 1) {
-              progress.innerHTML = '训练结束，可以进行预测'
+              progress.innerHTML = '训练结束，可以进行预测' // 最后一轮提示完成
             }
             await tf.nextFrame();
           }
         }
       });
 
+      // 定义预测函数
       window.predict = ()=> {
         const input = tf.tidy(()=> {
-          return tf.image.resizeBilinear(
-            tf.browser.fromPixels(canvas),
-            [IMAGE_H, IMAGE_W],
-            true
+          return tf.image.resizeBilinear( // 调整输入图像到指定大小
+            tf.browser.fromPixels(canvas), // 从 canvas 获取像素数据
+            [IMAGE_H, IMAGE_W], // 调整为 28x28
+            true // 保持灰度图格式
           );
         })
-        .slice([0, 0, 0], [IMAGE_H, IMAGE_W, 1])
+        .slice([0, 0, 0], [IMAGE_H, IMAGE_W, 1]) // 截取单通道图像
         .toFloat()
-        .div(255)
-        .reshape([1, 28, 28, 1])
+        .div(255) // 归一化到 [0, 1]
+        .reshape([1, 28, 28, 1]) // 改变形状为模型接受的输入格式
         tf.tidy(() => {
-          const output = model.predict(input);
+          const output = model.predict(input); // 进行预测
           const axis = 1;
-          const predictions = Array.from(output.argMax(axis).dataSync());
-          alert(`识别到的数字是：${predictions[0]}`);
-          window.clear();
+          const predictions = Array.from(output.argMax(axis).dataSync()); // 取最大概率索引
+          alert(`识别到的数字是：${predictions[0]}`); // 显示结果
+          window.clear(); // 清除画布
         });
       }
-      
     };
     
   </script>
